@@ -1,25 +1,41 @@
 import express, { json } from "express";
+import { MongoClient, ObjectId } from "mongodb";
 import cors from "cors";
 import chalk from "chalk";
-// import dayjs from "dayjs";
-// import Joi from "joi";
-// import dotenv from "dotenv";
+import dayjs from "dayjs";
+import Joi from "joi";
+import dotenv from "dotenv";
 
 
-const app=express();
+dotenv.config();
+const server=express();
+server.use(cors());
+server.use(json());
 
-app.use(express());
-app.use(cors());
-app.use(json());
+const mongoClient = new MongoClient(process.env.MONGO_URI);
+let dbChatUol;
+mongoClient.connect(() => {
+  dbChatUol = mongoClient.db("chatuol");
+});
 
-app.get("/", (req, res)=>{
-    res.send("Teste ok!")
-})
 
-app.post("/", (req, res)=>{
+//* Participants
+server.get("/participants", async (req, res) => {
+    try {
+      const participantsCollection = dbChatUol.collection("participants");
+      const users = await participantsCollection.find({}).toArray();
+  
+      res.send(users);
+    } catch (error) {
+      res.sendStatus(500);
+    }
+});
 
-})
+server.post("/participants", async (req, res) => {
+    //
+});
 
-app.listen(5005, ()=>{
+
+server.listen(5005, ()=>{
     console.log(chalk.bgGreen("Programa Rodando!"))
-})
+});
