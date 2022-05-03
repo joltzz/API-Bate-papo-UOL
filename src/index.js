@@ -47,8 +47,31 @@ server.get("/participants", async (req, res) => {
 });
 
 server.post("/participants", async (req, res) => {
-    //
-});
+    const validation = userSchema.validate(req.body);
+  
+    if (validation.error) {
+      res.status(422).send(validation.error);
+      return;
+    }
+    try {
+      const participantsCollection = dbChatUol.collection("participants");
+  
+      if (await participantsCollection.findOne({ name: req.body.name })) {
+        res.status(409).send("Ops, esse participante já existe");
+  
+        return;
+      }
+      const userData = {
+        name: req.body.name,
+        lastStatus: Date.now(),
+      };
+  
+      await participantsCollection.insertOne(userData);
+      res.sendStatus(201);
+    } catch (error) {
+      res.sendStatus(500);
+    }
+  });
 
 // Messages
 server.get("/messages", async (req, res) => {
