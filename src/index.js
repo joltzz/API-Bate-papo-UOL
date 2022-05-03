@@ -1,5 +1,5 @@
 import express, { json } from "express";
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoClient } from "mongodb";
 import cors from "cors";
 import chalk from "chalk";
 import dayjs from "dayjs";
@@ -151,10 +151,30 @@ server.post("/status", async (req, res) => {
 
 
 //Remove
-//setinterval()...
-
+setInterval(async () => {
+    try {
+      const participants = dbChatUol.collection("participants");
+      const messages = dbChatUol.collection("messages");
+      const online = await participants.find({}).toArray();
+  
+      for (const participant of online) {
+        if (Date.now() - participant.lastStatus > 10000) {
+          await participants.deleteOne({ name: participant.name });
+          await messages.insertOne({
+            from: participant.name,
+            to: "Todos",
+            text: "sai da sala...",
+            type: "status",
+            time: dayjs().format("HH:mm:ss"),
+          });
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, 15000);
 
 // Listen
-server.listen(5005, ()=>{
+server.listen(5000, ()=>{
     console.log(chalk.bgGreen("Programa Rodando!"))
 });
