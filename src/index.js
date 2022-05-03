@@ -99,32 +99,55 @@ server.get("/messages", async (req, res) => {
 });
 
 server.post("/messages", async (req, res) => {
-    //
-});
+    const messageFrom = req.headers.user;
+    const validation = messageSchema.validate(req.body, { abortEarly: false });
+    const participants = await dbChatUol.collection("participants");
+    try {
+      let authorization = await participants.findOne({ name: messageFrom });
+  
+      if (!authorization) {
+        res.sendStatus(422);
+  
+        return;
+      }
+      if (validation.error) {
+        res.status(422).send("Erro na validação dos dados");
+  
+        return;
+      }
+      const message = {
+        ...req.body,
+        from: messageFrom,
+        time: dayjs().format("HH:mm:ss"),
+      };
+      await dbChatUol.collection("messages").insertOne(message);
+      res.sendStatus(201);
+    } catch (error) {
+      res.sendStatus(500);
+    }
+  });
 
 
 //Status
-server.post("/status", async (req, res)=>{
-    const username= req.header.user;
-
-    try{
-        const participantsCollection =dbChatUol.collection("participants");
-        const participantsList = await participantsCollection.find({}).toArray();
-        if(!participantsList.find((p)=> p.name === username)){
-            res.sendStatus(404);
-        }
-        else{
-            await participantsCollection.updateOne(
-                { name: username},
-                { $set: {lastStatus: Date.now() }}
-            );
-            res.sendStatus(200);
-        }
-    } catch(e){
-        console.log(e);
-        res.sendStatus(500);
+server.post("/status", async (req, res) => {
+    const username = req.headers.user;
+  
+    try {
+      const participantsCollection = dbChatUol.collection("participants");
+      const participantsList = await participantsCollection.find({}).toArray();
+      if (!participantsList.find((p) => p.name === username)) {
+        res.sendStatus(404);
+      } else {
+        await participantsCollection.updateOne(
+          { name: username },
+          { $set: { lastStatus: Date.now() } }
+        );
+        res.sendStatus(200);
+      }
+    } catch (error) {
+      res.sendStatus(500);
     }
-});
+  });
 
 
 //Remove
